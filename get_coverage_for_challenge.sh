@@ -8,17 +8,17 @@ set -o pipefail
 SCRIPT_CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 CHALLENGE_ID=$1
-CSHARP_TEST_COVERAGE_DIR="${SCRIPT_CURRENT_DIR}/coverage"
-CSHARP_INSTRUMENTED_COVERAGE_REPORT="${CSHARP_TEST_COVERAGE_DIR}/instrumented-coverage.xml"
-CSHARP_TEST_RUN_REPORT="${CSHARP_TEST_COVERAGE_DIR}/test-report.xml"
-CSHARP_CODE_COVERAGE_INFO="${SCRIPT_CURRENT_DIR}/coverage.tdl"
+FSHARP_TEST_COVERAGE_DIR="${SCRIPT_CURRENT_DIR}/coverage"
+FSHARP_INSTRUMENTED_COVERAGE_REPORT="${FSHARP_TEST_COVERAGE_DIR}/instrumented-coverage.xml"
+FSHARP_TEST_RUN_REPORT="${FSHARP_TEST_COVERAGE_DIR}/test-report.xml"
+FSHARP_CODE_COVERAGE_INFO="${SCRIPT_CURRENT_DIR}/coverage.tdl"
 
 exitAfterNoCoverageReportFoundError() {
   echo "No coverage report was found"
   exit -1
 }
 
-mkdir -p ${CSHARP_TEST_COVERAGE_DIR}
+mkdir -p ${FSHARP_TEST_COVERAGE_DIR}
 
 ( cd ${SCRIPT_CURRENT_DIR} && \
      nuget restore befaster.sln )
@@ -49,27 +49,27 @@ mkdir -p ${CSHARP_TEST_COVERAGE_DIR}
       --assemblyExcludeFilter=Mono\.DllMap.+                                      \
       --typeFilter=System.                                                        \
       --outputDirectory=${SCRIPT_CURRENT_DIR}/__UnitTestWithAltCover              \
-      --xmlReport=${CSHARP_INSTRUMENTED_COVERAGE_REPORT} || true
+      --xmlReport=${FSHARP_INSTRUMENTED_COVERAGE_REPORT} || true
 )
 
 # Run the tests against the instrumented binaries
 (
   cd ${SCRIPT_CURRENT_DIR} && \
     mono ${SCRIPT_CURRENT_DIR}/packages/altcover.3.5.569/tools/net45/AltCover.exe Runner                \
-        --executable ${SCRIPT_CURRENT_DIR}/packages/NUnit.ConsoleRunner.3.8.0/tools/nunit3-console.exe  \
+        --executable ${SCRIPT_CURRENT_DIR}/packages/NUnit.ConsoleRunner.3.7.0/tools/nunit3-console.exe  \
         --recorderDirectory ${SCRIPT_CURRENT_DIR}/__UnitTestWithAltCover/                               \
         -w ${SCRIPT_CURRENT_DIR}                                                                        \
         -- --noheader --labels=All  --work=${SCRIPT_CURRENT_DIR}                                        \
-        --result=${CSHARP_TEST_RUN_REPORT}                                                     \
+        --result=${FSHARP_TEST_RUN_REPORT}                                                     \
         ${SCRIPT_CURRENT_DIR}/__UnitTestWithAltCover/BeFaster.App.Tests.dll || true
 )
 
-[ -e ${CSHARP_CODE_COVERAGE_INFO} ] && rm ${CSHARP_CODE_COVERAGE_INFO}
+[ -e ${FSHARP_CODE_COVERAGE_INFO} ] && rm ${FSHARP_CODE_COVERAGE_INFO}
 
-if [ -f "${CSHARP_INSTRUMENTED_COVERAGE_REPORT}" ]; then
+if [ -f "${FSHARP_INSTRUMENTED_COVERAGE_REPORT}" ]; then
     TOTAL_COVERAGE_PERCENTAGE=0
-    COVERAGE_SUMMARY_FILE=${CSHARP_TEST_COVERAGE_DIR}/coverage-summary-${CHALLENGE_ID}.xml
-    COVERAGE_IN_PACKAGE=$(xmllint ${CSHARP_INSTRUMENTED_COVERAGE_REPORT} \
+    COVERAGE_SUMMARY_FILE=${FSHARP_TEST_COVERAGE_DIR}/coverage-summary-${CHALLENGE_ID}.xml
+    COVERAGE_IN_PACKAGE=$(xmllint ${FSHARP_INSTRUMENTED_COVERAGE_REPORT} \
                                   --xpath '//Class[starts-with(./FullName,"BeFaster.App.Solutions.'${CHALLENGE_ID}'.")]/Summary' || true)
 
    echo "<xml>${COVERAGE_IN_PACKAGE}</xml>" > ${COVERAGE_SUMMARY_FILE}
@@ -79,8 +79,8 @@ if [ -f "${CSHARP_INSTRUMENTED_COVERAGE_REPORT}" ]; then
      TOTAL_COVERAGE_PERCENTAGE=$(($COVERED * 100 / $TOTAL_LINES))
    fi
 
-    echo ${TOTAL_COVERAGE_PERCENTAGE} > ${CSHARP_CODE_COVERAGE_INFO}
-    cat ${CSHARP_CODE_COVERAGE_INFO}
+    echo ${TOTAL_COVERAGE_PERCENTAGE} > ${FSHARP_CODE_COVERAGE_INFO}
+    cat ${FSHARP_CODE_COVERAGE_INFO}
     exit 0
 else
     exitAfterNoCoverageReportFoundError
